@@ -69,7 +69,7 @@ get_lbs(_, []).
 
 % WARNING: This only works assuming G is var, while the expected behavior
 % might be that `set_lbs(G, LBs)` is equivalent to `set_lbs(G, LBs), maplist(subsumes(G), LBs)`.
-set_lbs(G, []) :- del_attr(G, subsumes), !.
+set_lbs(G, []) :- !, del_attr(G, subsumes).
 set_lbs(G, LBs) :- put_attr(G, subsumes, LBs).
 
 % compact_lbs(G) just de-dupes G's lower bounds, and removes any self-subsumption. It doesn't merge LBs or remove redundant transitive subsumptions.
