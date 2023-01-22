@@ -1,25 +1,20 @@
 :- module(subsumes, [
+	      subsumes/2,
 	      op(700, xfx, subsumes),
-	      subsumes/2
+	      subsumes_chk/2
 	  ]).
 
-:- use_module(guardedmap, [guardedmap/3]).
-
-%%% TODO maybe add subsumeschk/2 to check if something necessarily subsumes another.
+:- use_module("../util/guardedmap", [guardedmap/3]).
 
 %!  subsumes(?General, ?Specific) is semidet.
 %
 %   subsumes/2 maintains the relation that one term subsumes another,
 %   according to standard unification of terms.
 %
-%   Cycles are immediately collapsed:
-%   ?- [A, B, C] subsumes [B, C, A].
-%   A = B, B = C.
-%
 %   See the unit tests for examples.
 subsumes(General, Specific) :-
     guardedmap(
-        [G, S]>>(var(G) ; var(S)),
+        guard,
         subsumes_,
         [General, Specific]).
 
@@ -28,12 +23,37 @@ subsumes_(General, Specific) :-
     ->  add_lb(General, Specific)
     ;   subsumes_var(General, Specific).
 
+%!  subsumes_chk(+General, +Specific) is semidet.
+%
+%   Holds if `General` necessarily subsumes `Specific`.
+%   This predicate fails to be relational when subsumption is induced after it fails:
+%   ==
+%   ?- \+ subsumes_chk(G, S), G subsumes S, subsumes_chk(G, S).
+%   G subsumes S.
+%   ==
+subsumes_chk(General, Specific) :-
+    guardedmap(
+	guard,
+	subsumes_chk_,
+	[General, Specific]).
+
+subsumes_chk_(General, Specific) :- General == Specific, !.
+subsumes_chk_(General, _) :- permavar(General), !.
+subsumes_chk_(General, Specific) :-
+    get_lbs(General, LBs),
+    member(LB, LBs),
+    subsumes_chk(LB, Specific).
+
+guard(General, Specific) :- var(General) ; var(Specific).
+
 subsumes_var(G, S) :-
     term_variables(G, GVars),
     (member_eq(S, GVars)
     ->  % S occurs in G, so G subsumes S implies S = G.
         % This avoids nontermination when subsumption would induce cyclic
         % data, e.g. `f(X) subsumes X`.
+	% TODO this is insufficient when cyclic data is induced indirectly,
+	% through a chain of subsumptions, e.g. `f(X) subsumes Y, Y subsumes X`.
         S = G
     ;   copy_term_nat(G, S),
         term_variables(S, SVars),
@@ -80,17 +100,16 @@ compact_lbs(G) :-
         chain(G, (get_lbs, sort, ignore(selectchk_eq(G))), LBs),
         set_lbs(G, LBs).
 
-%!  permavar(+G) is semidet.
+%!  permavar(+V) is semidet.
 %
-%   Succeeds if the set of terms subsumed by G contains a pair of nonvars
-%   with a var LGG. If so, var(G) must always hold. In other words,
-%   `freeze(G, fail)` would have no observable effect.
-% TODO should this be an exposed predicate?
-permavar(G) :-
-    chain(G, (get_lbs, include(nonvar), foldl1(term_subsumer)), LGG),
+%   Succeeds if the set of terms subsumed by `V` contains a pair of nonvars
+%   with a var LGG. If so, `var(V)` must always hold. This is equivalent
+%   to e.g. `subsumes_chk(G, apple), subsumes_chk(G, orange)`.
+permavar(V) :-
+    chain(V, (get_lbs, include(nonvar), foldl1(term_subsumer)), LGG),
     var(LGG),
     % The following is just an optimization in case LBs is large.
-    set_lbs(G, [every, thing]).
+    set_lbs(V, [every, thing]).
 
 attr_unify_hook(LBs, Y) :- maplist(subsumes(Y), LBs).
 

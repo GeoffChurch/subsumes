@@ -1,4 +1,4 @@
-:- use_module(subsumes).
+:- use_module("../prolog/subsumes").
 
 :- begin_tests(subsumes).
 
@@ -29,9 +29,18 @@ test(permavar_lbs_compressed) :-
     maplist(subsumes(X), [1, 2, 3, 4, 5, 6]),
     check_lbs(X, [every, thing]).
 
-test(subsumption_with_induced_cyclic_data_terminates) :-
+test(subsumption_with_directly_induced_cyclic_data_terminates) :-
     f(X, Y) subsumes X,
     X == f(X, Y).
+
+%% test(subsumption_with_indirectly_induced_cyclic_data_terminates1) :-
+%%     X subsumes Y,
+%%     Y subsumes Z,
+%%     X = f(Z).
+
+%% test(subsumption_with_indirectly_induced_cyclic_data_terminates2) :-
+%%     f(X) subsumes Y,
+%%     Y subsumes X.
 
 test(subsumption_with_cyclic_data) :-
     X = f(X, Y),
