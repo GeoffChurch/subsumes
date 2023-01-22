@@ -30,13 +30,3 @@ test(permavar_subsumes_anything) :-
     subsumes_chk(X, 3).
 
 :- end_tests(subsumes_chk).
-
-%%% UTILS %%%
-
-get_lbs(G, LBs) :- get_attr(G, subsumes, LBs), !.
-get_lbs(_, []).
-
-check_lbs(G, Expected) :-
-    get_lbs(G, Actual),
-    msort(Expected, X),
-    msort(Actual, X).

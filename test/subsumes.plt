@@ -57,8 +57,6 @@ test(subsume_then_unify_leaves_loop) :-
     % because compact_lbs/1 is called by attribute_goals//1.
     check_lbs(X, [X]).
 
-:- end_tests(subsumes).
-
 %%% UTILS %%%
 
 get_lbs(G, LBs) :- get_attr(G, subsumes, LBs), !.
@@ -68,3 +66,5 @@ check_lbs(G, Expected) :-
     get_lbs(G, Actual),
     msort(Expected, X),
     msort(Actual, X).
+
+:- end_tests(subsumes).
