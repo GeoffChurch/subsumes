@@ -48,12 +48,10 @@ guard(General, Specific) :- var(General) ; var(Specific).
 
 subsumes_var(G, S) :-
     term_variables(G, GVars),
-    (member_eq(S, GVars)
-    ->  % S occurs in G, so G subsumes S implies S = G.
+    (any(subsumes_chk(S), GVars)
+    ->  % S already subsumes some var in G, so G subsumes S implies S = G.
         % This avoids nontermination when subsumption would induce cyclic
-        % data, e.g. `f(X) subsumes X`.
-	% TODO this is insufficient when cyclic data is induced indirectly,
-	% through a chain of subsumptions, e.g. `f(X) subsumes Y, Y subsumes X`.
+        % data, e.g. `f(X) subsumes Y, Y subsumes X`.
         S = G
     ;   copy_term_nat(G, S),
         term_variables(S, SVars),
@@ -155,3 +153,7 @@ mapargs(G, X, Y) :-
 name_arity_args_term(Name, Arity, Args, Term) :-
     functor(Term, Name, Arity),
     Term =.. [_|Args].
+
+any(G, Xs) :-
+    member(X, Xs),
+    call(G, X).

@@ -33,14 +33,14 @@ test(subsumption_with_directly_induced_cyclic_data_terminates) :-
     f(X, Y) subsumes X,
     X == f(X, Y).
 
-%% test(subsumption_with_indirectly_induced_cyclic_data_terminates1) :-
-%%     X subsumes Y,
-%%     Y subsumes Z,
-%%     X = f(Z).
+test(subsumption_with_1_step_indirectly_induced_cyclic_data_terminates2) :-
+    f(X) subsumes Y,
+    Y subsumes X.
 
-%% test(subsumption_with_indirectly_induced_cyclic_data_terminates2) :-
-%%     f(X) subsumes Y,
-%%     Y subsumes X.
+test(subsumption_with_2_step_indirectly_induced_cyclic_data_terminates) :-
+    X subsumes Y,
+    Y subsumes Z,
+    X = f(Z).
 
 test(subsumption_with_cyclic_data) :-
     X = f(X, Y),
