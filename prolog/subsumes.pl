@@ -4,7 +4,7 @@
 	      subsumes_chk/2
 	  ]).
 
-:- use_module("../util/guardedmap", [guardedmap/3]).
+:- consult(guardedmap).
 
 %!  subsumes(?General, ?Specific) is semidet.
 %
@@ -76,7 +76,7 @@ collapse_cycle(End, Cur) :-
         % with just the LBs which didn't cycle.
         partition(collapse_cycle(End), CurLBs, [_|_], RemainingLBs),
         Cur = End, % Cur has no LBs so this doesn't risk repeating work via attr_unify_hook.
-        chain(End, (get_lbs, append(RemainingLBs)), LBs),
+        call_dcg((get_lbs, append(RemainingLBs)), End, LBs),
         set_lbs(Cur, LBs),
         compact_lbs(Cur).
 
@@ -95,7 +95,7 @@ compact_lbs(G) :-
     permavar(G)
     ->  true
     ;   % Consider merging mergeable LBs, and maybe mark dummy variables in their attributes.
-        chain(G, (get_lbs, sort, ignore(selectchk_eq(G))), LBs),
+        call_dcg((get_lbs, sort, ignore(selectchk_eq(G))), G, LBs),
         set_lbs(G, LBs).
 
 %!  permavar(+V) is semidet.
@@ -104,7 +104,7 @@ compact_lbs(G) :-
 %   with a var LGG. If so, `var(V)` must always hold. This is equivalent
 %   to e.g. `subsumes_chk(G, apple), subsumes_chk(G, orange)`.
 permavar(V) :-
-    chain(V, (get_lbs, include(nonvar), foldl1(term_subsumer)), LGG),
+    call_dcg((get_lbs, include(nonvar), foldl1(term_subsumer)), V, LGG),
     var(LGG),
     % The following is just an optimization in case LBs is large.
     set_lbs(V, [every, thing]).
@@ -123,11 +123,6 @@ attribute_goals_(LBs, G, [maplist(subsumes(G), LBs)]).
 
 %%% UTILS %%%
 
-chain(I, F, O) :- call_dcg(F, I, O).
-
-first_visit(Term, Seen0, Seen) :-
-    rb_insert_new(Seen0, Term, 1, Seen).
-
 foldl1(Goal, [V0|List], V) :-
     foldl(Goal, List, V0, V).
 
@@ -144,15 +139,6 @@ ignore(_) --> [].
 %   Removes the first occurrence of Elem. Equality is tested with ==.
 selectchk_eq(X) --> [Y], { X == Y }, !.
 selectchk_eq(X), [Y] --> [Y], selectchk_eq(X).
-
-% Replaces terms:mapargs/3, which is broken for non-compounds in SWI 8.3.20.
-mapargs(G, X, Y) :-
-    maplist(name_arity_args_term(_,_), [Xs, Ys], [X, Y]),
-    maplist(G, Xs, Ys).
-
-name_arity_args_term(Name, Arity, Args, Term) :-
-    functor(Term, Name, Arity),
-    Term =.. [_|Args].
 
 any(G, Xs) :-
     member(X, Xs),
