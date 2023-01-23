@@ -1,7 +1,7 @@
 # subsumes
 Relational term subsumption for SWI-Prolog
 
-`subsumes/2` is intended as a relational drop-in replacement for [`subsumes_term/2`](https://www.swi-prolog.org/pldoc/doc_for?object=subsumes_term/2). It can handle cyclic data, as well as cases where cyclic data would be induced.
+`subsumes/2` is intended as a relational drop-in replacement for the anyway deprecated [`terms:subsumes/2`](https://www.swi-prolog.org/pldoc/doc_for?object=subsumes/2). It can handle cyclic data, as well as cases where cyclic data would be induced.
 
 ```prolog
 ?- f(X, Y) subsumes G.
@@ -19,8 +19,6 @@ _A subsumes _B.
 ```
 
 See the unit tests in [`test/subsumes.plt`](test/subsumes.plt) for more examples.
-
-Note that this conflicts with the deprecated [`terms:subsumes/2`](https://www.swi-prolog.org/pldoc/doc_for?object=subsumes/2).
 
 ## Installation in SWI-Prolog
 
