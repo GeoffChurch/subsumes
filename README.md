@@ -20,12 +20,22 @@ _A subsumes _B.
 
 See the unit tests in [`test/subsumes.plt`](test/subsumes.plt) for more examples.
 
-Executing the following goal from the top-level `subsumes` directory should run all the tests:
+Note that this conflicts with the deprecated [`terms:subsumes/2`](https://www.swi-prolog.org/pldoc/doc_for?object=subsumes/2).
+
+## Installation in SWI-Prolog
+
 ```prolog
-?- expand_file_name("test/**.plt", Tests), maplist(consult, Tests), run_tests.
+?- pack_install(subsumes).
 ```
 
-Note that this conflicts with the deprecated [`terms:subsumes/2`](https://www.swi-prolog.org/pldoc/doc_for?object=subsumes/2).
+## Testing
+
+Executing the following goal from the top-level `subsumes` directory should run all the tests:
+```prolog
+?- expand_file_name("test/*.plt", Tests), maplist(consult, Tests), run_tests.
+```
+
+---
 
 TODO: make ISO-compatible.
 
