@@ -118,8 +118,8 @@ attribute_goals(G) -->
     Goals.
 
 attribute_goals_([],  _, []) :- !.
-attribute_goals_([S], G, [G subsumes S]) :- !.
-attribute_goals_(LBs, G, [maplist(subsumes(G), LBs)]).
+attribute_goals_([S], G, [subsumes:subsumes(G, S)]) :- !.
+attribute_goals_(LBs, G, [maplist(subsumes:subsumes(G), LBs)]).
 
 %%% UTILS %%%
 
