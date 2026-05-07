@@ -41,6 +41,6 @@ TODO: make ISO-compatible.
 1. update `pack.pl`
 2. do GitHub release with new tag matching the pack.pl version
 3. execute:
-```prolog
-?- make_directory(potato), pack_install(subsumes, [url('http://github.com/GeoffChurch/subsumes/archive/13.17.zip'), package_directory(potato)]).
+```bash
+swipl -g "make_directory(temp), pack_install(subsumes, [url('https://github.com/GeoffChurch/subsumes/archive/0.5.zip'), pack_directory(temp), interactive(false)]), delete_directory_and_contents(temp)" -t halt
 ```
