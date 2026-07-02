@@ -1,7 +1,9 @@
 :- module(subsumes, [
 	      subsumes/2,
 	      op(700, xfx, subsumes),
-	      subsumes_chk/2
+	      subsumes_chk/2,
+	      compact_lbs/1,
+	      is_permavar/1
 	  ]).
 
 :- consult(guardedmap).
@@ -38,7 +40,7 @@ subsumes_chk(General, Specific) :-
 	[General, Specific]).
 
 subsumes_chk_(General, Specific) :- General == Specific, !.
-subsumes_chk_(General, _) :- permavar(General), !.
+subsumes_chk_(General, _) :- is_permavar(General), !.
 subsumes_chk_(General, Specific) :-
     get_lbs(General, LBs),
     member(LB, LBs),
@@ -63,7 +65,7 @@ add_lb(G, LB) :-
     ->  true
     ;   get_lbs(G, LBs),
         set_lbs(G, [LB|LBs]),
-        compact_lbs(G).
+        dedup_lbs(G).
 
 % Collapse all paths from Cur to End, or fail if no path exists.
 collapse_cycle(End, Cur) :-
@@ -78,7 +80,7 @@ collapse_cycle(End, Cur) :-
         Cur = End, % Cur has no LBs so this doesn't risk repeating work via attr_unify_hook.
         call_dcg((get_lbs, append(RemainingLBs)), End, LBs),
         set_lbs(Cur, LBs),
-        compact_lbs(Cur).
+        dedup_lbs(Cur).
 
 % WARNING: This only works assuming G is var, while the expected behavior
 % might be that `get_lbs(G, LBs)` is equivalent to `get_lbs(G, LBs), maplist(subsumes(G), LBs)`.
@@ -90,29 +92,41 @@ get_lbs(_, []).
 set_lbs(G, []) :- !, del_attr(G, subsumes).
 set_lbs(G, LBs) :- put_attr(G, subsumes, LBs).
 
-% compact_lbs(G) just de-dupes G's lower bounds, and removes any self-subsumption. It doesn't merge LBs or remove redundant transitive subsumptions.
-compact_lbs(G) :-
-    permavar(G)
-    ->  true
-    ;   % Consider merging mergeable LBs, and maybe mark dummy variables in their attributes.
-        call_dcg((get_lbs, sort, ignore(selectchk_eq(G))), G, LBs),
-        set_lbs(G, LBs).
-
-%!  permavar(+V) is semidet.
+%!  compact_lbs(+V) is det.
 %
-%   Succeeds if the set of terms subsumed by `V` contains a pair of nonvars
-%   with a var LGG. If so, `var(V)` must always hold. This is equivalent
-%   to e.g. `subsumes_chk(G, apple), subsumes_chk(G, orange)`.
-permavar(V) :-
+%   Compact `V`'s lower bounds. Safe, functionally invisible, and completely unnecessary for
+%   most use cases. It does forget the original LBs, so it is unsuitable if you need them,
+%   which is why it's not automatically applied.
+compact_lbs(G) :-
+    is_permavar(G)
+    ->  set_lbs(G, [every, thing])
+    ;   dedup_lbs(G).
+
+dedup_lbs(G) :-
+    dedup_lbs_(G, LBs),
+    set_lbs(G, LBs).
+
+dcg_peek_state(X, X, X).
+
+dedup_lbs_ -->
+    dcg_peek_state(G),
+    % Consider merging mergeable LBs, and maybe mark dummy variables in their attributes.
+    get_lbs,
+    sort, % dedup
+    ignore(selectchk_eq(G)). % remove G from its own LBs, if present.
+
+%!  is_permavar(+V) is semidet.
+%
+%   Succeeds if `V`'s nonvar LBs antiunify to a var. This is equivalent to e.g.
+%   `subsumes_chk(G, apple), subsumes_chk(G, orange)`.
+is_permavar(V) :-
     call_dcg((get_lbs, include(nonvar), foldl1(term_subsumer)), V, LGG),
-    var(LGG),
-    % The following is just an optimization in case LBs is large.
-    set_lbs(V, [every, thing]).
+    var(LGG).
 
 attr_unify_hook(LBs, Y) :- maplist(subsumes(Y), LBs).
 
 attribute_goals(G) -->
-    { compact_lbs(G),
+    { dedup_lbs(G),
       get_lbs(G, LBs),
       attribute_goals_(LBs, G, Goals) },
     Goals.
